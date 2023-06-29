@@ -20,7 +20,7 @@ struct Resource* AppendResource(struct Resource* resource);
 
 struct Resource* AquireResource(struct thread* thread, struct Resource* resource);
 
-bool ReleaseResource(struct thread* thread, struct Resoure* resource);
+void ReleaseResource(struct thread* thread, struct Resoure* resource);
 
 bool IsThreadMustWait(struct thread* thread, struct Resource* resource);
 
@@ -29,3 +29,7 @@ bool IsResourceHeld(struct Resource* resource);
 void AddThreadToWaitingQueue(struct thread* thread, struct Resource* resource);
 
 void AddResourceToThread(struct thread* thread, struct Resource* resource);
+
+struct thread* RemoveTopThreadFromWaitingQueue(struct Resource* resource);
+
+void RemoveAllThreadResources(struct thread* thread);

@@ -104,6 +104,60 @@ void AddResourceToThread(struct thread* thread, struct Resource* resource){
     }
 }
 
+struct thread* RemoveTopThreadFromWaitingQueue(struct Resource* resource){
+    if (resource->WaitingQueueHead == NULL)
+    {
+        return NULL;
+    }
+    
+    struct WaitQueueElem elem = resource->WaitingQueueHead;
+
+    resource->WaitingQueueHead = resource->WaitingQueueHead->Next;
+
+    return elem->Thread;
+}
+
+void ReleaseResource(struct thread* thread, struct Resoure* resource){
+    struct Resource res = thread->resources;
+    struct Resource copyRes = res;
+
+    while (res != resource)
+    {
+        copyRes = res;
+        res = res->Next;
+    }
+
+    if (copyRes != res)
+    {
+        copyRes.Next = res.Next; 
+    }
+
+    res = NULL;
+
+    lock_acquire(&resource_head_lock);
+    resource->Holder = NULL;
+    struct thread* newThread;
+    newThread = RemoveTopThreadFromWaitingQueue(resource);
+    lock_release(&resource_head_lock);
+
+    thread_unblock(&newThread);
+}
+
+void RemoveAllThreadResources(struct thread* thread){
+    if (thread->resources == NULL)
+    {
+        return;
+    }
+
+    while (thread->resources != NULL)
+    {
+        ReleaseResource(&thread, &thread->resources);
+        thread->resources = thread->resources->Next;
+    }    
+
+    return;
+}
+
 struct Resource* AquireResource(struct thread* thread, struct Resource* resource){
     lock_acquire(&resource_head_lock);
 
@@ -111,6 +165,8 @@ struct Resource* AquireResource(struct thread* thread, struct Resource* resource
     {
         AddThreadToWaitingQueue(&thread, &resource);
         lock_release(&resource_head_lock);
+        RemoveAllThreadResources(&thread);
+        thread_block();
         return NULL;
     }
     
