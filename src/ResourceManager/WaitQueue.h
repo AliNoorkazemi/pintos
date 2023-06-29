@@ -3,5 +3,4 @@
 struct WaitQueueElem {
     struct thread* Thread;
     struct WaitQueueElem* Next;
-    struct WaitQueueElem* Prev;
 };
