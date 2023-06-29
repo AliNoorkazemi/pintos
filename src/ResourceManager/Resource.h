@@ -1,5 +1,6 @@
 #include "threads/thread.h"
 #include "WaitQueue.h"
+#include "threads/synch.h"
 
 static unsigned int ResourceCount = 0;
 
@@ -13,6 +14,8 @@ struct Resource {
 
 static struct Resource* resource_haed;
 
+static struct Lock resource_head_lock;
+
 struct Resource* AppendResource(struct Resource* resource);
 
 struct Resource* AquireResource(struct thread* thread, struct Resource* resource);
@@ -24,3 +27,5 @@ bool IsThreadMustWait(struct thread* thread, struct Resource* resource);
 bool IsResourceHeld(struct Resource* resource);
 
 void AddThreadToWaitingQueue(struct thread* thread, struct Resource* resource);
+
+void AddResourceToThread(struct thread* thread, struct Resource* resource);

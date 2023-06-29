@@ -1,5 +1,6 @@
 #include "threads/thread.h"
 #include "Resource.h"
+#include "threads/synch.h"
 
 struct Resource* AppendResource(int id){
     if (resource_haed == NULL)
@@ -10,6 +11,7 @@ struct Resource* AppendResource(int id){
         ResourceCount++;
         resource_haed->WaitingQueue = NULL;
         resource_haed->Id = id;
+        lock_init(&resource_head_lock);
     }else {
         struct Resource res = resource_haed;
 
@@ -84,4 +86,38 @@ void AddThreadToWaitingQueue(struct thread* thread, struct Resource* resource){
         newElem->Next = NULL;
         elem->Next = newElem;
     }
+}
+
+void AddResourceToThread(struct thread* thread, struct Resource* resource){
+    if (thread->resources == NULL)
+    {
+        thread->resources = resource;
+    }else{
+        struct Resource res = thread->resources;
+
+        while (res->Next != NULL)
+        {
+            res = res->Next;
+        }
+        
+        res.Next = resource;
+    }
+}
+
+struct Resource* AquireResource(struct thread* thread, struct Resource* resource){
+    lock_acquire(&resource_head_lock);
+
+    if (IsThreadMustWait(&thread, &resource))
+    {
+        AddThreadToWaitingQueue(&thread, &resource);
+        lock_release(&resource_head_lock);
+        return NULL;
+    }
+    
+    resource->Holder = thread;
+
+    AddResourceToThread(&thread, &resource);
+    lock_release(&resource_head_lock);
+
+    return resource;
 }
